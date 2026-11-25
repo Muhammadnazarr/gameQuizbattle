@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0b1216" />
+  <title>Quiz Battle 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Three.js disimpan lokal di folder vendor/ supaya game jalan langsung di GitHub Pages tanpa build -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/examples/jsm/": "./vendor/three/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="scene"></div>
+
+  <div id="hud" class="hidden">
+    <div class="topbar">
+      <div class="player-panel p1">
+        <div class="pname" id="name1">Pemain 1</div>
+        <div class="hp"><div class="hp-ghost" id="hpghost1"></div><div class="hp-fill" id="hp1"></div></div>
+        <div class="pstats"><span id="hptext1">100</span> HP · Skor <b id="score1">0</b><span class="combo" id="combo1"></span></div>
+      </div>
+
+      <div class="center-info">
+        <div id="subjectLabel"></div>
+        <div id="roundLabel">Ronde 1</div>
+        <div class="timer"><div class="timer-fill" id="timerFill"></div></div>
+      </div>
+
+      <div class="player-panel p2">
+        <div class="pname" id="name2">Pemain 2</div>
+        <div class="hp"><div class="hp-ghost" id="hpghost2"></div><div class="hp-fill" id="hp2"></div></div>
+        <div class="pstats"><span id="hptext2">100</span> HP · Skor <b id="score2">0</b><span class="combo" id="combo2"></span></div>
+      </div>
+    </div>
+
+    <div class="question-area">
+      <div class="question" id="question">? + ?</div>
+      <div class="options" id="options"></div>
+    </div>
+
+    <div class="hint only-kbd">Jeda: <kbd>P</kbd> atau <kbd>Esc</kbd></div>
+    <button id="btn-pause-touch" class="pause-touch only-touch" aria-label="Jeda">⏸</button>
+  </div>
+
+  <div id="floaters"></div>
+  <div id="banner" class="hidden"></div>
+
+  <div id="screen-modes" class="overlay menu">
+    <div class="card wide">
+      <h1>QUIZ <span>BATTLE</span></h1>
+      <p class="sub">Pilih mode permainan</p>
+      <div class="mode-grid">
+        <button class="mode" id="mode-bot" style="--c:#46f08a">
+          <div class="ico">🤖</div>
+          <div class="nm">V.S. AI</div>
+          <div class="ds">Lawan AI dengan 20 level di tiap mapel. Menangkan satu level untuk membuka level berikutnya.</div>
+        </button>
+        <button class="mode" id="mode-room" style="--c:#35d0ff">
+          <div class="ico">🎮</div>
+          <div class="nm">Custom Room</div>
+          <div class="ds">Duel 2 pemain dalam satu keyboard. Atur sendiri pelajaran, tingkat kesulitan, dan nyawa.</div>
+        </button>
+      </div>
+      <div class="menu-actions">
+        <button class="patch-btn" id="btn-settings">⚙️ Setting</button>
+        <button class="patch-btn" id="btn-patch">📜 Patch Note <span id="ver-label"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-patch" class="overlay menu hidden">
+    <div class="card wide patch">
+      <button class="back" id="btn-patch-back">← Menu utama</button>
+      <h2 class="setup-title">Patch Note</h2>
+      <div class="patch-list" id="patch-list"></div>
+    </div>
+  </div>
+
+  <div id="screen-settings" class="overlay menu hidden">
+    <div class="card settings">
+      <button class="back" id="btn-settings-back">← Menu utama</button>
+      <h2 class="setup-title">Setting</h2>
+
+      <div class="group">
+        <label class="glabel lbl">Grafis</label>
+        <div class="seg" id="seg-gfx">
+          <button data-v="low">Low</button>
+          <button data-v="medium">Medium</button>
+          <button data-v="high">High</button>
+        </div>
+        <div class="hint-text" id="gfx-hint"></div>
+      </div>
+
+      <div class="group">
+        <label class="glabel lbl">Background Music <b id="val-music">50%</b></label>
+        <input class="slider" type="range" id="vol-music" min="0" max="100" step="1" value="50" />
+      </div>
+
+      <div class="group">
+        <label class="glabel lbl">Sound Effect <b id="val-sfx">80%</b></label>
+        <input class="slider" type="range" id="vol-sfx" min="0" max="100" step="1" value="80" />
+      </div>
+
+      <button class="ghost" id="btn-settings-reset">Kembalikan ke default</button>
+      <button class="ghost danger" id="btn-reset-all">↺ Reset semua progres V.S. AI</button>
+    </div>
+  </div>
+
+  <div id="screen-subjects" class="overlay menu hidden">
+    <div class="card wide">
+      <button class="back" id="btn-subj-back">← Menu utama</button>
+      <h1>QUIZ <span>BATTLE</span></h1>
+      <p class="sub" id="subjects-sub">Pilih pelajaranmu!</p>
+      <div class="subject-grid" id="subject-grid"></div>
+    </div>
+  </div>
+
+  <div id="screen-levels" class="overlay menu hidden">
+    <div class="card wide levels">
+      <button class="back" id="btn-levels-back">← Pilih pelajaran</button>
+      <h2 class="setup-title" id="levels-title">V.S. AI</h2>
+
+      <div class="row two">
+        <label>Nama kamu<input id="input-bot-name" maxlength="12" value="Pemain 1" /></label>
+      </div>
+
+      <div class="glabel levels-head">
+        <span>Pilih level lawan · <span id="levels-progress"></span></span>
+        <button class="reset-btn" id="btn-reset-level">↺ Reset Level</button>
+      </div>
+      <div class="level-grid" id="level-grid"></div>
+
+      <p class="rules"><span class="only-kbd">Tombol jawab: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> = pilihan 1–4.</span><span class="only-touch">Ketuk jawaban yang benar.</span>
+        Jawab benar lebih cepat dari AI untuk menyerang. Menang untuk membuka level berikutnya!</p>
+    </div>
+  </div>
+
+  <div id="screen-setup" class="overlay menu hidden">
+    <div class="card">
+      <button class="back" id="btn-back">← Pilih pelajaran</button>
+      <h2 class="setup-title" id="setup-title">Matematika</h2>
+
+      <div class="row two">
+        <label>Nama Pemain 1<input id="input-name1" maxlength="12" value="Pemain 1" /></label>
+        <label>Nama Pemain 2<input id="input-name2" maxlength="12" value="Pemain 2" /></label>
+      </div>
+
+      <div class="group">
+        <div class="glabel">Tingkat kesulitan</div>
+        <div class="seg" id="seg-diff">
+          <button data-v="easy">Mudah</button>
+          <button data-v="medium" class="on">Sedang</button>
+          <button data-v="hard">Sulit</button>
+        </div>
+        <div class="diff-hint" id="diff-hint"></div>
+      </div>
+
+      <div class="group" id="group-ops">
+        <div class="glabel">Operasi hitung</div>
+        <div class="seg multi" id="seg-ops">
+          <button data-v="+" class="on">＋</button>
+          <button data-v="-" class="on">−</button>
+          <button data-v="*" class="on">×</button>
+          <button data-v="/">÷</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <div class="glabel">Nyawa (HP)</div>
+        <div class="seg" id="seg-hp">
+          <button data-v="60">Cepat</button>
+          <button data-v="100" class="on">Normal</button>
+          <button data-v="160">Panjang</button>
+        </div>
+      </div>
+
+      <div class="controls only-kbd">
+        <div class="ctrl p1"><b>Pemain 1</b> (kiri)<br><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> = pilihan 1–4</div>
+        <div class="ctrl p2"><b>Pemain 2</b> (kanan)<br><kbd>I</kbd><kbd>J</kbd><kbd>K</kbd><kbd>L</kbd> = pilihan 1–4</div>
+      </div>
+      <p class="rules only-touch">Di HP/tablet: <b style="color:var(--p1)">Pemain 1</b> mengetuk sisi <b>kiri</b> kartu jawaban, <b style="color:var(--p2)">Pemain 2</b> mengetuk sisi <b>kanan</b>. Paling enak dimainkan dengan HP diputar mendatar (landscape).</p>
+      <p class="rules">Soal yang sama muncul untuk kedua pemain. Siapa yang menjawab benar lebih dulu menyerang lawan —
+        makin cepat, makin besar damage. Jawab benar berturut-turut untuk combo: bar HP makin tebal dan nyawa terisi sedikit demi sedikit.
+        Jawaban salah membuatmu terkunci sebentar!</p>
+
+      <button class="big" id="btn-start">MULAI PERTARUNGAN</button>
+    </div>
+  </div>
+
+  <div id="screen-pause" class="overlay hidden">
+    <div class="card small">
+      <h2>Jeda</h2>
+      <button class="big" id="btn-resume">Lanjutkan</button>
+      <button class="ghost" id="btn-quit">Menu utama</button>
+    </div>
+  </div>
+
+  <div id="screen-result" class="overlay hidden">
+    <div class="card small">
+      <div class="trophy">🏆</div>
+      <h2 id="winner-text">Pemenang!</h2>
+      <div class="star-box hidden" id="result-stars">
+        <div class="star-row"><span class="star" style="--i:0">★</span><span class="star" style="--i:1">★</span><span class="star" style="--i:2">★</span></div>
+        <div class="star-detail" id="star-detail"></div>
+      </div>
+      <p class="result-note" id="result-note"></p>
+      <div class="stats" id="result-stats"></div>
+      <button class="big hidden" id="btn-next">Level Berikutnya</button>
+      <button class="big" id="btn-rematch">Main Lagi</button>
+      <button class="ghost hidden" id="btn-result-levels">Pilih Level</button>
+      <button class="ghost" id="btn-menu">Menu Utama</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>

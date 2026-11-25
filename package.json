@@ -1,0 +1,18 @@
+{
+  "name": "game-grafika-komputer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Game duel matematika 2 pemain dengan Three.js",
+  "scripts": {
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}
